@@ -261,6 +261,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
   _parseSharedString(XmlElement node) {
     var list = new List();
     node.findAllElements('t').forEach((child) {
+      if ((child.parent as XmlElement).name.toString() == 'rPh') return;
       list.add(_parseValue(child));
     });
     _sharedStrings.add(list.join(''));
@@ -349,7 +350,7 @@ class XlsxDecoder extends SpreadsheetDecoder {
         value = _parseValue(node.findElements('v').first) == '1';
         break;
       // error
-      case 'e': 
+      case 'e':
       // formula
       case 'str':
         // <c r="C6" s="1" vm="15" t="str">
@@ -420,11 +421,13 @@ class XlsxDecoder extends SpreadsheetDecoder {
     var coords = cellCoordsFromCellId(cell.getAttribute('r'));
     return coords[0];
   }
+
   static void _setCellColNumber(XmlElement cell, int colIndex) {
     var attr = cell.getAttributeNode('r');
     var coords = cellCoordsFromCellId(attr.value);
     attr.value = '${numericToLetters(colIndex)}${coords[1]}';
   }
+
   static void _setCellRowNumber(XmlElement cell, int rowIndex) {
     var attr = cell.getAttributeNode('r');
     var coords = cellCoordsFromCellId(attr.value);
@@ -518,11 +521,13 @@ class XlsxDecoder extends SpreadsheetDecoder {
       new XmlAttribute(new XmlName('r'), '${numericToLetters(columnIndex + 1)}${rowIndex + 1}'),
       new XmlAttribute(new XmlName('t'), 'inlineStr'),
     ];
-    var children = value == null ? <XmlElement>[] : <XmlElement>[
-      new XmlElement(new XmlName('is'), [], [
-        new XmlElement(new XmlName('t'), [], [new XmlText(_escape(value.toString()))])
-      ]),
-    ];
+    var children = value == null
+        ? <XmlElement>[]
+        : <XmlElement>[
+            new XmlElement(new XmlName('is'), [], [
+              new XmlElement(new XmlName('t'), [], [new XmlText(_escape(value.toString()))])
+            ]),
+          ];
     return new XmlElement(new XmlName('c'), attributes, children);
   }
 }
